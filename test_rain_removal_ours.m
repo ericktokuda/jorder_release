@@ -8,7 +8,8 @@ addpath('./mtv/');
 addpath('./vifvec/');
 addpath('./matlabPyrTools/');
 
-matcaffe_path = '/home/keiji/projects/caffe/matlab/';
+HOME = getenv('HOME');
+matcaffe_path = fullfile(HOME, 'projects/caffe/matlab/');
 
 % 
 % Set Tags.
@@ -17,7 +18,6 @@ use_gpu = 1;
 gpu_id = 0;
 obj_tag = 1;        % Whether perform a objective evaluation
 multi_view_tag = 0; % Whether conduct a multi-view aggreation in the testing phase
-
 
 %
 % Caffe and Model Settings.
@@ -50,11 +50,16 @@ net = caffe.Net(net_model_path, net_weights, phase);
 % 
 % Set Datasets.
 %
+%rain_dir = '/home/ibaraujo/derain_benchmark/real/rainy_paired_img';
+%rain_dir = '/home/ibaraujo/derain_benchmark/real/rainy_paired_img/';
 rain_dir = './Dataset/Rain100L/';
-norain_dir = './Dataset/Rain100L/';
+%norain_dir = './Dataset/Rain100L/';
 
+%files=dir(strcat(rain_dir, '*.jpg'));
 files=dir([rain_dir, 'rain-*.png']);
-norain_files=dir([norain_dir, 'norain-*.png']);
+%disp(files)
+
+%norain_files=dir([norain_dir, 'norain-*.png']);
 test_len = length(files);
 front_tag = 'Rain100L';
 save_dir = 'Results';
@@ -84,18 +89,18 @@ for i=1:test_len
     end
     
     image = double(image(:,:,1));
-    im_gt = imread([norain_dir, norain_files(i).name]);
+    %im_gt = imread([norain_dir, norain_files(i).name]);
     
-    if c==3
-        im_gt = rgb2ycbcr(im_gt);
-        im_gt_cb = im_gt(:,:,2);
-        im_gt_cr = im_gt(:,:,3);
-        im_gt = double(im_gt(:,:,1));
-    end
+    %if c==3
+        %im_gt = rgb2ycbcr(im_gt);
+        %im_gt_cb = im_gt(:,:,2);
+        %im_gt_cr = im_gt(:,:,3);
+        %im_gt = double(im_gt(:,:,1));
+    %end
     
     [input_height, input_width, ~] = size(image);
     rain_image = double(image)/255;
-    im_gt = double(im_gt)/255;
+    %im_gt = double(im_gt)/255;
     
     im_res = matcaffe_rain_joint_one_direction(net, rain_image);
     
@@ -117,29 +122,34 @@ for i=1:test_len
         im_res_final = im_res;
     end
     
-    if obj_tag == 1
-        [psnr_value] = compute_psnr(uint8(im_res_final*255), uint8(im_gt*255), 'psnr');
-        [ssim_value] = cal_ssim(uint8(im_res_final*255), uint8(im_gt*255),0,0);
+    %if obj_tag == 1
+        %[psnr_value] = compute_psnr(uint8(im_res_final*255), uint8(im_gt*255), 'psnr');
+        %[ssim_value] = cal_ssim(uint8(im_res_final*255), uint8(im_gt*255),0,0);
         
-        display(psnr_value);
-        display(ssim_value);
+        %display(psnr_value);
+        %display(ssim_value);
         
-        psnr_list(1,i) = psnr_value;
-        ssim_list(1,i) = ssim_value;
+        %psnr_list(1,i) = psnr_value;
+        %ssim_list(1,i) = ssim_value;
         
-        psnr_res = psnr_res + psnr_value;
-        ssim_res = ssim_res + ssim_value;
-    end
+        %psnr_res = psnr_res + psnr_value;
+        %ssim_res = ssim_res + ssim_value;
+    %end
     
     output_image_name = ['./', save_dir, '/Derained-', front_tag, '-' files(i).name];
-    im_final_color = cat(3, uint8(im_res_final(:,:)*255), im_gt_cb, im_gt_cr);
+    %im_final_color = cat(3, uint8(im_res_final(:,:)*255), im_gt_cb, im_gt_cr);
+    im_final_color = cat(3, uint8(im_res_final(:,:)*255), image_cb, image_cr);
+        %image_cb = double(image(:,:,2));
+        %image_cr = double(image(:,:,3));
+    %im_final_color = uint8(im_res_final(:,:)*255);
     im_final_color = ycbcr2rgb(im_final_color);
     imwrite(im_final_color, output_image_name);
 end
 
-psnr_res = psnr_res/test_len;
-ssim_res = ssim_res/test_len;
+%psnr_res = psnr_res/test_len;
+%ssim_res = ssim_res/test_len;
 
-display('Average: ');
-display(psnr_res);
-display(ssim_res);
+%display('Average: ');
+%display(psnr_res);
+%display(ssim_res);
+%disp('checkpoint10')
